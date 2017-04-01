@@ -65,9 +65,9 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         let movie = movies[indexPath.row]
         
         if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
-            if let image = getMoviePosterImage(baseUrl: posterBaseUrl, size: posterSize, posterPath: posterPath) {
-                cell.posterImageView.image = image
-            }
+            let urlString = "\(posterBaseUrl)\(posterSize)/\(posterPath)"
+            let url = URL(string: urlString)
+            cell.posterImageView.setImageWith(url!)
         }
         if let title = movie.value(forKeyPath: "original_title") as? String {
             cell.titleLabel.text = title
@@ -158,18 +158,6 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
             }
         }
         task.resume()
-    }
-    
-    func getMoviePosterImage(baseUrl: String, size: String, posterPath: String) -> UIImage? {
-        let urlString = "\(baseUrl)\(size)/\(posterPath)"
-        let url = URL(string: urlString)
-        if let data = try? Data(contentsOf: url!) {
-            if let image = UIImage(data: data) {
-                return image
-            }
-        }
-        
-        return nil
     }
     
     // MARK: - Refresh Control Action
