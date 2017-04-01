@@ -12,7 +12,7 @@ import MBProgressHUD
 
 class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet weak var nowPlayingTableView: UITableView!
-
+    
     var errorView: ErrorView!
     
     let defaults = UserDefaults.standard
@@ -24,6 +24,10 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(refreshControlAction(_:)), for: UIControlEvents.valueChanged)
+        nowPlayingTableView.insertSubview(refreshControl, at: 0)
         
         nowPlayingTableView.delegate = self
         nowPlayingTableView.dataSource = self
@@ -122,7 +126,7 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         task.resume()
     }
     
-    func getNowPlayingMovies() {
+    func getNowPlayingMovies(_ refreshControl: UIRefreshControl? = nil) {
         let url = URL(string: "https://api.themoviedb.org/3/movie/now_playing?api_key=0bae87a1c2bc3fd65e17a82fec52d5c7")
         let request = URLRequest(url: url!)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
@@ -140,6 +144,10 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
                     if let results = responseDictionary?.value(forKeyPath: "results") as? [NSDictionary] {
                         self.movies = results
                         self.nowPlayingTableView.reloadData()
+                        
+                        if refreshControl != nil {
+                            refreshControl!.endRefreshing()
+                        }
                     }
                 }
             }
@@ -162,6 +170,11 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         }
         
         return nil
+    }
+    
+    // MARK: - Refresh Control Action
+    func refreshControlAction(_ refreshControl: UIRefreshControl) {
+        getNowPlayingMovies(refreshControl)
     }
 
     
