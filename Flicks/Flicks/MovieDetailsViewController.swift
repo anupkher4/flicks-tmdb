@@ -16,6 +16,7 @@ class MovieDetailsViewController: UIViewController {
     @IBOutlet weak var scoreLabel: UILabel!
     @IBOutlet weak var runningTimeLabel: UILabel!
     @IBOutlet weak var overviewLabel: UILabel!
+    @IBOutlet weak var scrollView: UIScrollView!
     
     let defaults = UserDefaults.standard
     
@@ -26,6 +27,10 @@ class MovieDetailsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let contentWidth = scrollView.bounds.width
+        let contentHeight = scrollView.bounds.height * 1.15
+        scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)
 
         if let baseUrl = defaults.object(forKey: "base_url") as? String {
             posterBaseUrl = baseUrl
@@ -66,9 +71,10 @@ class MovieDetailsViewController: UIViewController {
                     if let release = movie.value(forKeyPath: "release_date") as? String {
                         self.releaseDateLabel.text = self.getFormattedDate(string: release)
                     }
-                    if let score = movie.value(forKeyPath: "vote_average") as? Double {
-                        let percentageScore = Int(exactly: (score / 10.0) * 100)
-                        self.scoreLabel.text = "\(percentageScore!)%"
+                    if let score = movie.value(forKeyPath: "vote_average") as? Float {
+                        if let percentageScore = Int(exactly: (score / 10.0) * 100.0) {
+                            self.scoreLabel.text = "\(percentageScore)%"
+                        }
                     }
                     if let running = movie.value(forKeyPath: "runtime") as? Int {
                         let hours = running / 60
@@ -77,6 +83,7 @@ class MovieDetailsViewController: UIViewController {
                     }
                     if let overview = movie.value(forKeyPath: "overview") as? String {
                         self.overviewLabel.text = overview
+                        self.overviewLabel.sizeToFit()
                     }
                 }
             }
