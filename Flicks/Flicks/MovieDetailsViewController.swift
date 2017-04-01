@@ -19,6 +19,8 @@ class MovieDetailsViewController: UIViewController {
     @IBOutlet weak var overviewLabel: UILabel!
     @IBOutlet weak var scrollView: UIScrollView!
     
+    var errorView: ErrorView!
+    
     let defaults = UserDefaults.standard
     
     var movieId: Int!
@@ -41,6 +43,13 @@ class MovieDetailsViewController: UIViewController {
         }
         
         getMovieDetails(id: movieId)
+        
+        errorView = ErrorView(frame: CGRect(x: 0, y: 80, width: view.bounds.width, height: 60))
+        errorView.backgroundColor = UIColor(white: 0.0, alpha: 0.8)
+        
+        view.addSubview(errorView)
+        
+        errorView.isHidden = true
     }
 
     override func didReceiveMemoryWarning() {
@@ -65,6 +74,7 @@ class MovieDetailsViewController: UIViewController {
             MBProgressHUD.hide(for: self.view, animated: true)
             
             if let data = data {
+                self.errorView.isHidden = true
                 if let movie = try! JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
                     if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
                         if let image = self.getMoviePosterImage(baseUrl: self.posterBaseUrl, size: self.posterSize, posterPath: posterPath) {
@@ -92,6 +102,11 @@ class MovieDetailsViewController: UIViewController {
                         self.overviewLabel.sizeToFit()
                     }
                 }
+            }
+            
+            if let error = error {
+                print(error)
+                self.errorView.isHidden = false
             }
         }
         task.resume()

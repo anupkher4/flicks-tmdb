@@ -13,6 +13,8 @@ import MBProgressHUD
 class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet weak var nowPlayingTableView: UITableView!
 
+    var errorView: ErrorView!
+    
     let defaults = UserDefaults.standard
     
     var posterBaseUrl = ""
@@ -22,13 +24,20 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         nowPlayingTableView.delegate = self
         nowPlayingTableView.dataSource = self
         nowPlayingTableView.rowHeight = 120
         
         getApiConfiguration()
         getNowPlayingMovies()
+        
+        errorView = ErrorView(frame: CGRect(x: 0, y: 80, width: view.bounds.width, height: 60))
+        errorView.backgroundColor = UIColor(white: 0.0, alpha: 0.8)
+        
+        view.addSubview(errorView)
+        
+        errorView.isHidden = true
     }
 
     override func didReceiveMemoryWarning() {
@@ -77,14 +86,15 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         let request = URLRequest(url: url!)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
         
-        MBProgressHUD.showAdded(to: self.view, animated: true)
+        //MBProgressHUD.showAdded(to: self.view, animated: true)
         
         let task: URLSessionDataTask = session.dataTask(with: request) {
             (data, response, error) in
             
-            MBProgressHUD.hide(for: self.view, animated: true)
+            //MBProgressHUD.hide(for: self.view, animated: true)
             
             if let data = data {
+                self.errorView.isHidden = true
                 if let responseDictionary = try? JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
                     if let images = responseDictionary?.value(forKeyPath: "images") as? NSDictionary {
                         if let baseUrl = images.value(forKeyPath: "secure_base_url") as? String {
@@ -103,6 +113,11 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
                     }
                 }
             }
+            
+            if let error = error {
+                print(error)
+                self.errorView.isHidden = false
+            }
         }
         task.resume()
     }
@@ -120,12 +135,18 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
             MBProgressHUD.hide(for: self.view, animated: true)
             
             if let data = data {
+                self.errorView.isHidden = true
                 if let responseDictionary = try? JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
                     if let results = responseDictionary?.value(forKeyPath: "results") as? [NSDictionary] {
                         self.movies = results
                         self.nowPlayingTableView.reloadData()
                     }
                 }
+            }
+            
+            if let error = error {
+                print(error)
+                self.errorView.isHidden = false
             }
         }
         task.resume()
