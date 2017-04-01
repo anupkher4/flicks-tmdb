@@ -8,6 +8,7 @@
 
 import UIKit
 import AFNetworking
+import MBProgressHUD
 
 class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet weak var nowPlayingTableView: UITableView!
@@ -76,8 +77,13 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         let request = URLRequest(url: url!)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
         
+        MBProgressHUD.showAdded(to: self.view, animated: true)
+        
         let task: URLSessionDataTask = session.dataTask(with: request) {
             (data, response, error) in
+            
+            MBProgressHUD.hide(for: self.view, animated: true)
+            
             if let data = data {
                 if let responseDictionary = try? JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
                     if let images = responseDictionary?.value(forKeyPath: "images") as? NSDictionary {
@@ -106,8 +112,13 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         let request = URLRequest(url: url!)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
         
+        MBProgressHUD.showAdded(to: self.view, animated: true)
+        
         let task: URLSessionDataTask = session.dataTask(with: request) {
             (data, response, error) in
+            
+            MBProgressHUD.hide(for: self.view, animated: true)
+            
             if let data = data {
                 if let responseDictionary = try? JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
                     if let results = responseDictionary?.value(forKeyPath: "results") as? [NSDictionary] {

@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import MBProgressHUD
 
 class MovieDetailsViewController: UIViewController {
     @IBOutlet weak var bigPosterImageView: UIImageView!
@@ -56,8 +57,13 @@ class MovieDetailsViewController: UIViewController {
         let request = URLRequest(url: url!)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
         
+        MBProgressHUD.showAdded(to: self.view, animated: true)
+        
         let task: URLSessionDataTask = session.dataTask(with: request) {
             (data, response, error) in
+            
+            MBProgressHUD.hide(for: self.view, animated: true)
+            
             if let data = data {
                 if let movie = try! JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
                     if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
