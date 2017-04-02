@@ -17,6 +17,7 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     
     let defaults = UserDefaults.standard
     
+    var endpoint = "now_playing"
     var posterBaseUrl = ""
     var posterSize = ""
     var bigPosterSize = ""
@@ -74,6 +75,7 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         }
         if let overview = movie.value(forKeyPath: "overview") as? String {
             cell.overviewLabel.text = overview
+            cell.overviewLabel.sizeToFit()
         }
         
         return cell
@@ -127,7 +129,7 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     }
     
     func getNowPlayingMovies(_ refreshControl: UIRefreshControl? = nil) {
-        let url = URL(string: "https://api.themoviedb.org/3/movie/now_playing?api_key=0bae87a1c2bc3fd65e17a82fec52d5c7")
+        let url = URL(string: "https://api.themoviedb.org/3/movie/\(endpoint)?api_key=0bae87a1c2bc3fd65e17a82fec52d5c7")
         let request = URLRequest(url: url!)
         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
         
