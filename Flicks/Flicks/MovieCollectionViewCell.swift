@@ -12,4 +12,9 @@ class MovieCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var posterImageView: UIImageView!
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        //titleLabel.center = posterImageView.center
+        //titleLabel.bounds.size.width = posterImageView.bounds.size.width
+    }
 }

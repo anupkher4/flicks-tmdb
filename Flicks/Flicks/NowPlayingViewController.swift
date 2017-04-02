@@ -23,6 +23,7 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     var posterSize = ""
     var bigPosterSize = ""
     var movies: [NSDictionary] = []
+    var searchedMovies: [NSDictionary] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -57,6 +58,11 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         listGridSegment.addTarget(self, action: #selector(segmentTapped(sender:)), for: .valueChanged)
         
         view.addSubview(listGridSegment)
+        
+        let searchBar = UISearchBar(frame: CGRect(x: 0, y: 0, width: view.bounds.width - 20, height: 30))
+        searchBar.delegate = self
+        searchBar.enablesReturnKeyAutomatically = true
+        navigationItem.titleView = searchBar
     }
 
     func segmentTapped(sender: UISegmentedControl) {
@@ -82,13 +88,19 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return movies.count
+        return searchedMovies.count == 0 ? movies.count : searchedMovies.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MovieCell", for: indexPath) as! MovieTableViewCell
         
-        let movie = movies[indexPath.row]
+        var movie: NSDictionary = [:]
+        
+        if searchedMovies.count == 0 {
+            movie = movies[indexPath.row]
+        } else {
+            movie = searchedMovies[indexPath.row]
+        }
         
         if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
             let urlString = "\(posterBaseUrl)\(posterSize)/\(posterPath)"
@@ -116,13 +128,19 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return movies.count
+        return searchedMovies.count == 0 ? movies.count : searchedMovies.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MovieCollectionViewCell", for: indexPath) as! MovieCollectionViewCell
         
-        let movie = movies[indexPath.row]
+        var movie: NSDictionary = [:]
+        
+        if searchedMovies.count == 0 {
+            movie = movies[indexPath.row]
+        } else {
+            movie = searchedMovies[indexPath.row]
+        }
         
         if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
             let urlString = "\(posterBaseUrl)\(posterSize)/\(posterPath)"
@@ -219,6 +237,39 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         task.resume()
     }
     
+    func searchMovies(withKeyword searchString: String) {
+        let urlString = "https://api.themoviedb.org/3/search/movie?api_key=0bae87a1c2bc3fd65e17a82fec52d5c7&include_adult=false&query=\(searchString)"
+        let queryString = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        let url = URL(string: queryString!)
+        let request = URLRequest(url: url!)
+        let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
+        
+        MBProgressHUD.showAdded(to: self.view, animated: true)
+        
+        let task = session.dataTask(with: request) {
+            (data, response, error) in
+            
+            MBProgressHUD.hide(for: self.view, animated: true)
+            
+            if let data = data {
+                self.errorView.isHidden = true
+                if let responseDictionary = try? JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
+                    if let results = responseDictionary?.value(forKeyPath: "results") as? [NSDictionary] {
+                        self.searchedMovies = results
+                        self.nowPlayingTableView.reloadData()
+                        self.nowPlayingCollectionView.reloadData()
+                    }
+                }
+            }
+            
+            if let error = error {
+                print(error)
+                self.errorView.isHidden = false
+            }
+        }
+        task.resume()
+    }
+    
     // MARK: - Refresh Control Action
     func refreshControlAction(_ refreshControl: UIRefreshControl) {
         getNowPlayingMovies(refreshControl)
@@ -241,10 +292,21 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
                 indexPath = nowPlayingCollectionView.indexPath(for: cell)!
             }
             
-            let selectedMovie = movies[indexPath.row]
+            var selectedMovie: NSDictionary = [:]
+            
+            if searchedMovies.count == 0 {
+                selectedMovie = movies[indexPath.row]
+            } else {
+                selectedMovie = searchedMovies[indexPath.row]
+            }
+            
             let id = selectedMovie.value(forKeyPath: "id") as! Int
             
             destinationVc.movieId = id
+            
+            searchedMovies = []
+            nowPlayingTableView.reloadData()
+            nowPlayingCollectionView.reloadData()
         }
     }
     
@@ -257,6 +319,31 @@ extension NowPlayingViewController: UICollectionViewDelegateFlowLayout {
         let numberOfItemsPerRow = 3
         let dimensions = CGFloat(Int(totalWidth) / numberOfItemsPerRow)
         
-        return CGSize(width: dimensions, height: dimensions)
+        return CGSize(width: dimensions, height: 200)
+    }
+}
+
+extension NowPlayingViewController: UISearchBarDelegate {
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.showsCancelButton = true
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        if !searchBar.text!.isEmpty {
+            print("Searching for movie titles containing \(searchBar.text!)")
+            searchMovies(withKeyword: searchBar.text!)
+        }
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+        searchedMovies = []
+        nowPlayingTableView.reloadData()
+        nowPlayingCollectionView.reloadData()
+    }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        searchBar.showsCancelButton = false
     }
 }
