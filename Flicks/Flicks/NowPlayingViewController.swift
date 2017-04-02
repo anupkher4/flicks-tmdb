@@ -19,9 +19,6 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     let defaults = UserDefaults.standard
     
     var endpoint = "now_playing"
-    var posterBaseUrl = ""
-    var posterSize = ""
-    var bigPosterSize = ""
     var movies: [NSDictionary] = []
     var searchedMovies: [NSDictionary] = []
     
@@ -40,7 +37,6 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         nowPlayingCollectionView.dataSource = self
         nowPlayingCollectionView.isHidden = true
         
-        getApiConfiguration()
         getNowPlayingMovies()
         
         errorView = ErrorView(frame: CGRect(x: 0, y: 80, width: view.bounds.width, height: 60))
@@ -103,9 +99,28 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         }
         
         if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
-            let urlString = "\(posterBaseUrl)\(posterSize)/\(posterPath)"
-            let url = URL(string: urlString)
-            cell.posterImageView.setImageWith(url!)
+            let urlString = "https://image.tmdb.org/t/p/w342/\(posterPath)"
+            let imageRequest = URLRequest(url: URL(string: urlString)!)
+            cell.posterImageView.setImageWith(
+                imageRequest,
+                placeholderImage: nil,
+                success: { (request, response, image) in
+                    self.errorView.isHidden = true
+                    
+                    // If image is not cached
+                    if (response != nil) {
+                        cell.posterImageView.alpha = 0.0
+                        cell.posterImageView.image = image
+                        UIView.animate(withDuration: 0.3) {
+                            cell.posterImageView.alpha = 1.0
+                        }
+                    } else { // If image is cached, set it
+                        cell.posterImageView.image = image
+                    }
+                },
+                failure: { (request, response, error) in
+                    self.errorView.isHidden = false
+                })
         }
         if let title = movie.value(forKeyPath: "original_title") as? String {
             cell.titleLabel.text = title
@@ -143,9 +158,28 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         }
         
         if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
-            let urlString = "\(posterBaseUrl)\(posterSize)/\(posterPath)"
-            let url = URL(string: urlString)
-            cell.posterImageView.setImageWith(url!)
+            let urlString = "https://image.tmdb.org/t/p/w342/\(posterPath)"
+            let imageRequest = URLRequest(url: URL(string: urlString)!)
+            cell.posterImageView.setImageWith(
+                imageRequest,
+                placeholderImage: nil,
+                success: { (request, response, image) in
+                    self.errorView.isHidden = true
+                    
+                    // If image is not cached
+                    if (response != nil) {
+                        cell.posterImageView.alpha = 0.0
+                        cell.posterImageView.image = image
+                        UIView.animate(withDuration: 0.3) {
+                            cell.posterImageView.alpha = 1.0
+                        }
+                    } else { // If image is cached, set it
+                        cell.posterImageView.image = image
+                    }
+                },
+                failure: { (request, response, error) in
+                    self.errorView.isHidden = false
+                })
         }
         if let title = movie.value(forKeyPath: "original_title") as? String {
             cell.titleLabel.text = title
@@ -160,47 +194,6 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     }
     
     // MARK: - TMDB API Helper Methods
-    
-    func getApiConfiguration() {
-        let url = URL(string: "https://api.themoviedb.org/3/configuration?api_key=0bae87a1c2bc3fd65e17a82fec52d5c7")
-        let request = URLRequest(url: url!)
-        let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue.main)
-        
-        //MBProgressHUD.showAdded(to: self.view, animated: true)
-        
-        let task: URLSessionDataTask = session.dataTask(with: request) {
-            (data, response, error) in
-            
-            //MBProgressHUD.hide(for: self.view, animated: true)
-            
-            if let data = data {
-                self.errorView.isHidden = true
-                if let responseDictionary = try? JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
-                    if let images = responseDictionary?.value(forKeyPath: "images") as? NSDictionary {
-                        if let baseUrl = images.value(forKeyPath: "secure_base_url") as? String {
-                            self.posterBaseUrl = baseUrl
-                            if self.defaults.object(forKey: "base_url") == nil {
-                                self.defaults.set(baseUrl, forKey: "base_url")
-                            }
-                        }
-                        if let posterSizes = images.value(forKeyPath: "poster_sizes") as? [String] {
-                            self.posterSize = posterSizes[0]
-                            self.bigPosterSize = posterSizes[4]
-                            if self.defaults.object(forKey: "poster_sizes") == nil {
-                                self.defaults.set(posterSizes, forKey: "poster_sizes")
-                            }
-                        }
-                    }
-                }
-            }
-            
-            if let error = error {
-                print(error)
-                self.errorView.isHidden = false
-            }
-        }
-        task.resume()
-    }
     
     func getNowPlayingMovies(_ refreshControl: UIRefreshControl? = nil) {
         let url = URL(string: "https://api.themoviedb.org/3/movie/\(endpoint)?api_key=0bae87a1c2bc3fd65e17a82fec52d5c7")

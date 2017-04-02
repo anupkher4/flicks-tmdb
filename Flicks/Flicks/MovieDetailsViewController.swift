@@ -25,8 +25,6 @@ class MovieDetailsViewController: UIViewController {
     
     var movieId: Int!
     var movie: NSDictionary = [:]
-    var posterBaseUrl = ""
-    var posterSize = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,13 +32,6 @@ class MovieDetailsViewController: UIViewController {
         let contentWidth = scrollView.bounds.width
         let contentHeight = scrollView.bounds.height * 1.15
         scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)
-
-        if let baseUrl = defaults.object(forKey: "base_url") as? String {
-            posterBaseUrl = baseUrl
-        }
-        if let posterSizes = defaults.object(forKey: "poster_sizes") as? [String] {
-            posterSize = posterSizes[4]
-        }
         
         getMovieDetails(id: movieId)
         
@@ -77,9 +68,37 @@ class MovieDetailsViewController: UIViewController {
                 self.errorView.isHidden = true
                 if let movie = try! JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary {
                     if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
-                        let urlString = "\(self.posterBaseUrl)\(self.posterSize)/\(posterPath)"
-                        let url = URL(string: urlString)
-                        self.bigPosterImageView.setImageWith(url!)
+                        let smallImageRequest = URLRequest(url: URL(string: "https://image.tmdb.org/t/p/w45/\(posterPath)")!)
+                        let largeImageRequest = URLRequest(url: URL(string: "https://image.tmdb.org/t/p/original/\(posterPath)")!)
+                        self.bigPosterImageView.setImageWith(
+                            smallImageRequest,
+                            placeholderImage: nil,
+                            success: { (smallImageRequest, smallImageResponse, smallImage) in
+                                self.errorView.isHidden = true
+                                if (response != nil) {
+                                    self.bigPosterImageView.alpha = 0.0
+                                    self.bigPosterImageView.image = smallImage
+                                    UIView.animate(
+                                        withDuration: 0.3,
+                                        animations: {
+                                            self.bigPosterImageView.alpha = 1.0
+                                    }, completion: { (success) in
+                                        self.bigPosterImageView.setImageWith(
+                                            largeImageRequest,
+                                            placeholderImage: smallImage,
+                                            success: { (largeImageRequest, largeImageResponse, largeImage) in
+                                                self.errorView.isHidden = true
+                                                self.bigPosterImageView.image = largeImage
+                                        }, failure: { (request, response, error) in
+                                            self.errorView.isHidden = false
+                                        })
+                                    })
+                                } else {
+                                    self.bigPosterImageView.image = smallImage
+                                }
+                        }, failure: { (request, response, error) in
+                            self.errorView.isHidden = false
+                        })
                     }
                     if let title = movie.value(forKeyPath: "original_title") as? String {
                         self.titleLabel.text = title
