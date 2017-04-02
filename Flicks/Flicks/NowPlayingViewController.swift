@@ -10,8 +10,9 @@ import UIKit
 import AFNetworking
 import MBProgressHUD
 
-class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UICollectionViewDelegate, UICollectionViewDataSource {
     @IBOutlet weak var nowPlayingTableView: UITableView!
+    @IBOutlet weak var nowPlayingCollectionView: UICollectionView!
     
     var errorView: ErrorView!
     
@@ -34,6 +35,10 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         nowPlayingTableView.dataSource = self
         nowPlayingTableView.rowHeight = 120
         
+        nowPlayingCollectionView.delegate = self
+        nowPlayingCollectionView.dataSource = self
+        nowPlayingCollectionView.isHidden = true
+        
         getApiConfiguration()
         getNowPlayingMovies()
         
@@ -43,8 +48,28 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         view.addSubview(errorView)
         
         errorView.isHidden = true
+        
+        let listGridSegment = UISegmentedControl(frame: CGRect(x: view.bounds.width - 100, y: view.bounds.height - 100, width: 80, height: 40))
+        listGridSegment.insertSegment(with: UIImage(named: "list_view"), at: 0, animated: true)
+        listGridSegment.insertSegment(with: UIImage(named: "grid_view"), at: 1, animated: true)
+        listGridSegment.selectedSegmentIndex = 0
+        
+        listGridSegment.addTarget(self, action: #selector(segmentTapped(sender:)), for: .valueChanged)
+        
+        view.addSubview(listGridSegment)
     }
 
+    func segmentTapped(sender: UISegmentedControl) {
+        if sender.selectedSegmentIndex == 0 {
+            nowPlayingCollectionView.isHidden = true
+            nowPlayingTableView.isHidden = false
+        }
+        if sender.selectedSegmentIndex == 1 {
+            nowPlayingTableView.isHidden = true
+            nowPlayingCollectionView.isHidden = false
+        }
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -83,6 +108,37 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    // MARK: - Collection View Delegate Methods
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 1
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return movies.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MovieCollectionViewCell", for: indexPath) as! MovieCollectionViewCell
+        
+        let movie = movies[indexPath.row]
+        
+        if let posterPath = movie.value(forKeyPath: "poster_path") as? String {
+            let urlString = "\(posterBaseUrl)\(posterSize)/\(posterPath)"
+            let url = URL(string: urlString)
+            cell.posterImageView.setImageWith(url!)
+        }
+        if let title = movie.value(forKeyPath: "original_title") as? String {
+            cell.titleLabel.text = title
+            cell.titleLabel.sizeToFit()
+        }
+        
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        performSegue(withIdentifier: "movieToDetails", sender: collectionView.cellForItem(at: indexPath))
     }
     
     // MARK: - TMDB API Helper Methods
@@ -146,6 +202,7 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
                     if let results = responseDictionary?.value(forKeyPath: "results") as? [NSDictionary] {
                         self.movies = results
                         self.nowPlayingTableView.reloadData()
+                        self.nowPlayingCollectionView.reloadData()
                         
                         if refreshControl != nil {
                             refreshControl!.endRefreshing()
@@ -174,14 +231,32 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "movieToDetails" {
             let destinationVc = segue.destination as! MovieDetailsViewController
-            let indexPath = nowPlayingTableView.indexPath(for: sender as! MovieTableViewCell)
-            let selectedMovie = movies[indexPath!.row]
+            
+            var indexPath: IndexPath = IndexPath()
+            
+            if sender is MovieTableViewCell {
+                indexPath = nowPlayingTableView.indexPathForSelectedRow!
+            } else if sender is MovieCollectionViewCell {
+                let cell = sender as! MovieCollectionViewCell
+                indexPath = nowPlayingCollectionView.indexPath(for: cell)!
+            }
+            
+            let selectedMovie = movies[indexPath.row]
             let id = selectedMovie.value(forKeyPath: "id") as! Int
             
             destinationVc.movieId = id
-            //print(id)
         }
     }
     
 
+}
+
+extension NowPlayingViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let totalWidth = collectionView.bounds.size.width
+        let numberOfItemsPerRow = 3
+        let dimensions = CGFloat(Int(totalWidth) / numberOfItemsPerRow)
+        
+        return CGSize(width: dimensions, height: dimensions)
+    }
 }
