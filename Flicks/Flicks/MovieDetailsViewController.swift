@@ -101,6 +101,7 @@ class MovieDetailsViewController: UIViewController {
                         })
                     }
                     if let title = movie.value(forKeyPath: "original_title") as? String {
+                        self.navigationItem.title = title
                         self.titleLabel.text = title
                     }
                     if let release = movie.value(forKeyPath: "release_date") as? String {

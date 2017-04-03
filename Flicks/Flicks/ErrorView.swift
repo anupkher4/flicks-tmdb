@@ -31,7 +31,7 @@ class ErrorView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        errorLabel.center = CGPoint(x: self.bounds.width/2, y: self.bounds.height/2)
+        errorLabel.center = CGPoint(x: self.bounds.size.width/2, y: self.bounds.size.height/2)
     }
     
     func setupLabel() {

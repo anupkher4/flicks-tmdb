@@ -25,6 +25,13 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        view.backgroundColor = UIColor(colorLiteralRed: 239/255.0, green: 203/255.0, blue: 104/255, alpha: 1.0)
+        
+        if let navigationBar = navigationController?.navigationBar {
+            navigationBar.barTintColor = UIColor(colorLiteralRed: 239/255.0, green: 203/255.0, blue: 104/255, alpha: 1.0)
+            navigationBar.tintColor = UIColor(white: 0.0, alpha: 1.0)
+        }
+        
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(refreshControlAction(_:)), for: UIControlEvents.valueChanged)
         nowPlayingTableView.insertSubview(refreshControl, at: 0)
@@ -47,6 +54,8 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         errorView.isHidden = true
         
         let listGridSegment = UISegmentedControl(frame: CGRect(x: view.bounds.width - 100, y: view.bounds.height - 100, width: 80, height: 40))
+        listGridSegment.backgroundColor = UIColor(colorLiteralRed: 239/255.0, green: 203/255.0, blue: 104/255, alpha: 1.0)
+        listGridSegment.tintColor = UIColor.black
         listGridSegment.insertSegment(with: UIImage(named: "list_view"), at: 0, animated: true)
         listGridSegment.insertSegment(with: UIImage(named: "grid_view"), at: 1, animated: true)
         listGridSegment.selectedSegmentIndex = 0
@@ -89,6 +98,10 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MovieCell", for: indexPath) as! MovieTableViewCell
+        cell.selectionStyle = .gray
+        
+        cell.separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        cell.backgroundColor = UIColor(colorLiteralRed: 239/255.0, green: 203/255.0, blue: 104/255, alpha: 1.0)
         
         var movie: NSDictionary = [:]
         
@@ -148,6 +161,7 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MovieCollectionViewCell", for: indexPath) as! MovieCollectionViewCell
+        cell.backgroundColor = UIColor(colorLiteralRed: 239/255.0, green: 203/255.0, blue: 104/255, alpha: 1.0)
         
         var movie: NSDictionary = [:]
         
