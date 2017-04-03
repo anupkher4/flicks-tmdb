@@ -39,10 +39,12 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         nowPlayingTableView.delegate = self
         nowPlayingTableView.dataSource = self
         nowPlayingTableView.rowHeight = 120
+        nowPlayingTableView.backgroundColor = UIColor(colorLiteralRed: 239/255.0, green: 203/255.0, blue: 104/255, alpha: 1.0)
         
         nowPlayingCollectionView.delegate = self
         nowPlayingCollectionView.dataSource = self
         nowPlayingCollectionView.isHidden = true
+        nowPlayingCollectionView.backgroundColor = UIColor(colorLiteralRed: 239/255.0, green: 203/255.0, blue: 104/255, alpha: 1.0)
         
         getNowPlayingMovies()
         
@@ -65,6 +67,7 @@ class NowPlayingViewController: UIViewController, UITableViewDelegate, UITableVi
         view.addSubview(listGridSegment)
         
         let searchBar = UISearchBar(frame: CGRect(x: 0, y: 0, width: view.bounds.width - 20, height: 30))
+        searchBar.placeholder = "Search for movies"
         searchBar.delegate = self
         searchBar.enablesReturnKeyAutomatically = true
         navigationItem.titleView = searchBar
@@ -340,6 +343,8 @@ extension NowPlayingViewController: UISearchBarDelegate {
         if !searchBar.text!.isEmpty {
             print("Searching for movie titles containing \(searchBar.text!)")
             searchMovies(withKeyword: searchBar.text!)
+            searchBar.text = ""
+            searchBar.resignFirstResponder()
         }
     }
     

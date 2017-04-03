@@ -29,6 +29,8 @@ class MovieDetailsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        view.backgroundColor = UIColor(colorLiteralRed: 239/255.0, green: 203/255.0, blue: 104/255, alpha: 1.0)
+        
         let contentWidth = scrollView.bounds.width
         let contentHeight = scrollView.bounds.height * 1.15
         scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)
